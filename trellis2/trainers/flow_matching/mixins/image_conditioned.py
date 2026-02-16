@@ -13,13 +13,20 @@ class DinoV2FeatureExtractor:
     """
     Feature extractor for DINOv2 models.
     """
+
     def __init__(self, model_name: str):
         self.model_name = model_name
-        self.model = torch.hub.load('facebookresearch/dinov2', model_name, pretrained=True)
+        self.model = torch.hub.load(
+            "facebookresearch/dinov2", model_name, pretrained=True
+        )
         self.model.eval()
-        self.transform = transforms.Compose([
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        self.transform = transforms.Compose(
+            [
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
 
     def to(self, device):
         self.model.to(device)
@@ -29,47 +36,64 @@ class DinoV2FeatureExtractor:
 
     def cpu(self):
         self.model.cpu()
-    
+
     @torch.no_grad()
     def __call__(self, image: Union[torch.Tensor, List[Image.Image]]) -> torch.Tensor:
         """
         Extract features from the image.
-        
+
         Args:
             image: A batch of images as a tensor of shape (B, C, H, W) or a list of PIL images.
-        
+
         Returns:
             A tensor of shape (B, N, D) where N is the number of patches and D is the feature dimension.
         """
         if isinstance(image, torch.Tensor):
             assert image.ndim == 4, "Image tensor should be batched (B, C, H, W)"
         elif isinstance(image, list):
-            assert all(isinstance(i, Image.Image) for i in image), "Image list should be list of PIL images"
+            assert all(isinstance(i, Image.Image) for i in image), (
+                "Image list should be list of PIL images"
+            )
             image = [i.resize((518, 518), Image.LANCZOS) for i in image]
-            image = [np.array(i.convert('RGB')).astype(np.float32) / 255 for i in image]
+            image = [np.array(i.convert("RGB")).astype(np.float32) / 255 for i in image]
             image = [torch.from_numpy(i).permute(2, 0, 1).float() for i in image]
             image = torch.stack(image).cuda()
         else:
             raise ValueError(f"Unsupported type of image: {type(image)}")
-        
+
         image = self.transform(image).cuda()
-        features = self.model(image, is_training=True)['x_prenorm']
+        features = self.model(image, is_training=True)["x_prenorm"]
         patchtokens = F.layer_norm(features, features.shape[-1:])
         return patchtokens
-    
+
 
 class DinoV3FeatureExtractor:
     """
     Feature extractor for DINOv3 models.
     """
+
     def __init__(self, model_name: str, image_size=512):
         self.model_name = model_name
-        self.model = DINOv3ViTModel.from_pretrained(model_name)
+        try:
+            self.model = DINOv3ViTModel.from_pretrained(model_name)
+        except:
+            import os
+
+            model_path = os.environ.get("DINO_MODEL_PATH")
+
+            if model_path is None:
+                raise RuntimeError("Environment variable DINO_MODEL_PATH is not set")
+
+            self.model = DINOv3ViTModel.from_pretrained(model_path)
         self.model.eval()
         self.image_size = image_size
-        self.transform = transforms.Compose([
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        self.transform = transforms.Compose(
+            [
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
 
     def to(self, device):
         self.model.to(device)
@@ -92,56 +116,66 @@ class DinoV3FeatureExtractor:
             )
 
         return F.layer_norm(hidden_states, hidden_states.shape[-1:])
-        
+
     @torch.no_grad()
     def __call__(self, image: Union[torch.Tensor, List[Image.Image]]) -> torch.Tensor:
         """
         Extract features from the image.
-        
+
         Args:
             image: A batch of images as a tensor of shape (B, C, H, W) or a list of PIL images.
-        
+
         Returns:
             A tensor of shape (B, N, D) where N is the number of patches and D is the feature dimension.
         """
         if isinstance(image, torch.Tensor):
             assert image.ndim == 4, "Image tensor should be batched (B, C, H, W)"
         elif isinstance(image, list):
-            assert all(isinstance(i, Image.Image) for i in image), "Image list should be list of PIL images"
-            image = [i.resize((self.image_size, self.image_size), Image.LANCZOS) for i in image]
-            image = [np.array(i.convert('RGB')).astype(np.float32) / 255 for i in image]
+            assert all(isinstance(i, Image.Image) for i in image), (
+                "Image list should be list of PIL images"
+            )
+            image = [
+                i.resize((self.image_size, self.image_size), Image.LANCZOS)
+                for i in image
+            ]
+            image = [np.array(i.convert("RGB")).astype(np.float32) / 255 for i in image]
             image = [torch.from_numpy(i).permute(2, 0, 1).float() for i in image]
             image = torch.stack(image).cuda()
         else:
             raise ValueError(f"Unsupported type of image: {type(image)}")
-        
+
         image = self.transform(image).cuda()
         features = self.extract_features(image)
         return features
-    
+
 
 class ImageConditionedMixin:
     """
     Mixin for image-conditioned models.
-    
+
     Args:
         image_cond_model: The image conditioning model.
     """
+
     def __init__(self, *args, image_cond_model: dict, **kwargs):
         super().__init__(*args, **kwargs)
         self.image_cond_model_config = image_cond_model
-        self.image_cond_model = None     # the model is init lazily
-        
+        self.image_cond_model = None  # the model is init lazily
+
     def _init_image_cond_model(self):
         """
         Initialize the image conditioning model.
         """
         with dist_utils.local_master_first():
-            self.image_cond_model = globals()[self.image_cond_model_config['name']](**self.image_cond_model_config.get('args', {}))
+            self.image_cond_model = globals()[self.image_cond_model_config["name"]](
+                **self.image_cond_model_config.get("args", {})
+            )
             self.image_cond_model.cuda()
-    
+
     @torch.no_grad()
-    def encode_image(self, image: Union[torch.Tensor, List[Image.Image]]) -> torch.Tensor:
+    def encode_image(
+        self, image: Union[torch.Tensor, List[Image.Image]]
+    ) -> torch.Tensor:
         """
         Encode the image.
         """
@@ -149,22 +183,22 @@ class ImageConditionedMixin:
             self._init_image_cond_model()
         features = self.image_cond_model(image)
         return features
-        
+
     def get_cond(self, cond, **kwargs):
         """
         Get the conditioning data.
         """
         cond = self.encode_image(cond)
-        kwargs['neg_cond'] = torch.zeros_like(cond)
+        kwargs["neg_cond"] = torch.zeros_like(cond)
         cond = super().get_cond(cond, **kwargs)
         return cond
-    
+
     def get_inference_cond(self, cond, **kwargs):
         """
         Get the conditioning data for inference.
         """
         cond = self.encode_image(cond)
-        kwargs['neg_cond'] = torch.zeros_like(cond)
+        kwargs["neg_cond"] = torch.zeros_like(cond)
         cond = super().get_inference_cond(cond, **kwargs)
         return cond
 
@@ -172,59 +206,68 @@ class ImageConditionedMixin:
         """
         Visualize the conditioning data.
         """
-        return {'image': {'value': cond, 'type': 'image'}}
-    
+        return {"image": {"value": cond, "type": "image"}}
+
 
 class MultiImageConditionedMixin:
     """
     Mixin for multiple-image-conditioned models.
-    
+
     Args:
         image_cond_model: The image conditioning model.
     """
+
     def __init__(self, *args, image_cond_model: dict, **kwargs):
         super().__init__(*args, **kwargs)
         self.image_cond_model_config = image_cond_model
-        self.image_cond_model = None     # the model is init lazily
-        
+        self.image_cond_model = None  # the model is init lazily
+
     def _init_image_cond_model(self):
         """
         Initialize the image conditioning model.
         """
         with dist_utils.local_master_first():
-            self.image_cond_model = globals()[self.image_cond_model_config['name']](**self.image_cond_model_config.get('args', {}))
-    
+            self.image_cond_model = globals()[self.image_cond_model_config["name"]](
+                **self.image_cond_model_config.get("args", {})
+            )
+
     @torch.no_grad()
-    def encode_images(self, images: Union[List[torch.Tensor], List[List[Image.Image]]]) -> List[torch.Tensor]:
+    def encode_images(
+        self, images: Union[List[torch.Tensor], List[List[Image.Image]]]
+    ) -> List[torch.Tensor]:
         """
         Encode the image.
         """
         if self.image_cond_model is None:
             self._init_image_cond_model()
         seqlen = [len(i) for i in images]
-        images = torch.cat(images, dim=0) if isinstance(images[0], torch.Tensor) else sum(images, [])
+        images = (
+            torch.cat(images, dim=0)
+            if isinstance(images[0], torch.Tensor)
+            else sum(images, [])
+        )
         features = self.image_cond_model(images)
         features = torch.split(features, seqlen)
         features = [feature.reshape(-1, feature.shape[-1]) for feature in features]
         return features
-        
+
     def get_cond(self, cond, **kwargs):
         """
         Get the conditioning data.
         """
         cond = self.encode_images(cond)
-        kwargs['neg_cond'] = [
+        kwargs["neg_cond"] = [
             torch.zeros_like(cond[0][:1, :]) for _ in range(len(cond))
         ]
         cond = super().get_cond(cond, **kwargs)
         return cond
-    
+
     def get_inference_cond(self, cond, **kwargs):
         """
         Get the conditioning data for inference.
         """
         cond = self.encode_images(cond)
-        kwargs['neg_cond'] = [
+        kwargs["neg_cond"] = [
             torch.zeros_like(cond[0][:1, :]) for _ in range(len(cond))
         ]
         cond = super().get_inference_cond(cond, **kwargs)
@@ -237,13 +280,15 @@ class MultiImageConditionedMixin:
         H, W = cond[0].shape[-2:]
         vis = []
         for images in cond:
-            canvas = torch.zeros(3, H * 2, W * 2, device=images.device, dtype=images.dtype)
+            canvas = torch.zeros(
+                3, H * 2, W * 2, device=images.device, dtype=images.dtype
+            )
             for i, image in enumerate(images):
                 if i == 4:
                     break
                 kh = i // 2
                 kw = i % 2
-                canvas[:, kh*H:(kh+1)*H, kw*W:(kw+1)*W] = image
+                canvas[:, kh * H : (kh + 1) * H, kw * W : (kw + 1) * W] = image
             vis.append(canvas)
         vis = torch.stack(vis)
-        return {'image': {'value': vis, 'type': 'image'}}
+        return {"image": {"value": vis, "type": "image"}}

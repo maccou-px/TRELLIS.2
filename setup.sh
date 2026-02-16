@@ -137,3 +137,8 @@ if [ "$OVOXEL" = true ] ; then
     cp -r o-voxel /tmp/extensions/o-voxel
     pip install /tmp/extensions/o-voxel --no-build-isolation
 fi
+
+# cf https://github.com/microsoft/TRELLIS.2/issues/38#:~:text=For%20future%20reference
+pip install "transformers<5.0.0"
+
+# Also consider this PR (https://github.com/microsoft/TRELLIS.2/pull/112/changes) if issues when installing. 
