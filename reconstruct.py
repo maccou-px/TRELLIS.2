@@ -42,8 +42,9 @@ def encode_decode_shape(encoder, decoder, vertices, faces, resolution=512):
         )
     )
 
-    dual_vertices = dual_vertices * resolution - voxel_indices
+    # dual_vertices = dual_vertices * resolution - voxel_indices
 
+    # add the batch dimension, 0 because we only have one mesh here!
     coords = torch.cat(
         [torch.zeros(len(voxel_indices), 1, dtype=torch.int32), voxel_indices], dim=1
     )
@@ -51,7 +52,9 @@ def encode_decode_shape(encoder, decoder, vertices, faces, resolution=512):
     intersected_sparse = SparseTensor(intersected.float().cuda(), coords.cuda())
 
     with torch.no_grad():
-        latent = encoder(vertices_sparse, intersected_sparse)
+        latent = encoder(
+            vertices_sparse, intersected_sparse
+        )  # Downsampling happens here, TODO: understand why
         decoder.set_resolution(resolution)
         meshes, subs = decoder(latent, return_subs=True)
 
@@ -119,18 +122,21 @@ def save_mesh(mesh, output_path):
 def main():
     shape_enc, shape_dec = load_shape_models()
 
-    mesh_path = "/home/martinaccou/work/TRELLIS.2/data/new_plane.glb"
+    # mesh_path = "/home/martinaccou/work/TRELLIS.2/data/bracket.stl"
+    mesh_path = "/home/martinaccou/work/TRELLIS.2/data/plane.stl"
     mesh = trimesh.load(mesh_path)
     if isinstance(mesh, trimesh.Scene):
         mesh = list(mesh.geometry.values())[0]
     vertices, faces = normalize_mesh(mesh)
 
     resolution = 1024
+    print("Encoding and decoding shape...")
     shape_mesh, subs = encode_decode_shape(
         shape_enc, shape_dec, vertices, faces, resolution=resolution
     )
     save_mesh(shape_mesh, "reconstructed_raw_shape.glb")
 
+    print("Postprocessing mesh with default texture...")
     glb_mesh = postprocess_with_default_texture(shape_mesh, subs, resolution)
     glb_mesh.export("reconstructed_mesh_postprocessed.glb")
 
