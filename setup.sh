@@ -77,7 +77,8 @@ if [ "$NEW_ENV" = true ] ; then
 fi
 
 if [ "$BASIC" = true ] ; then
-    pip install imageio imageio-ffmpeg tqdm easydict opencv-python-headless ninja trimesh transformers gradio==6.0.1 tensorboard pandas lpips zstandard
+    # cf https://github.com/microsoft/TRELLIS.2/issues/38#:~:text=For%20future%20reference
+    pip install imageio imageio-ffmpeg tqdm easydict opencv-python-headless ninja trimesh transformers==4.57.6 gradio==6.0.1 tensorboard pandas lpips zstandard
     pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
     sudo apt install -y libjpeg-dev
     pip install pillow-simd
@@ -135,10 +136,9 @@ fi
 if [ "$OVOXEL" = true ] ; then
     mkdir -p /tmp/extensions
     cp -r o-voxel /tmp/extensions/o-voxel
-    pip install /tmp/extensions/o-voxel --no-build-isolation
+    pip install -e ./o-voxel --no-build-isolation
 fi
 
-# cf https://github.com/microsoft/TRELLIS.2/issues/38#:~:text=For%20future%20reference
 pip install "transformers<5.0.0"
 
 # Also consider this PR (https://github.com/microsoft/TRELLIS.2/pull/112/changes) if issues when installing. 

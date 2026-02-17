@@ -69,7 +69,10 @@ def postprocess_with_default_texture(mesh, subs, resolution):
         "alpha": slice(5, 6),
     }
 
+    print(f"[DEBUG] Input mesh: {mesh.vertices.shape[0]} vertices, {mesh.faces.shape[0]} faces")
+    print(f"[DEBUG] Vertices bounds: {mesh.vertices.min(0)[0]} to {mesh.vertices.max(0)[0]}")
     mesh.fill_holes()
+    print(f"[DEBUG] After fill_holes: {mesh.vertices.shape[0]} vertices, {mesh.faces.shape[0]} faces")
 
     # Create default white material
     sub = subs[-1]
@@ -93,6 +96,7 @@ def postprocess_with_default_texture(mesh, subs, resolution):
     )
 
     mesh_with_voxel.simplify(16777216)
+    print(f"[DEBUG] After simplify: {mesh_with_voxel.vertices.shape[0]} vertices, {mesh_with_voxel.faces.shape[0]} faces")
 
     glb = o_voxel.postprocess.to_glb(
         vertices=mesh_with_voxel.vertices,
@@ -105,6 +109,7 @@ def postprocess_with_default_texture(mesh, subs, resolution):
         decimation_target=1000000,
         texture_size=4096,
         remesh=True,
+        geometry_only=True,
         remesh_band=1,
         remesh_project=0,
         verbose=True,
@@ -122,6 +127,7 @@ def save_mesh(mesh, output_path):
 def main():
     shape_enc, shape_dec = load_shape_models()
 
+    # mesh_path = "/home/jovyan/TRELLIS.2/data/plane.stl"
     mesh_path = "/home/jovyan/TRELLIS.2/data/bracket.stl"
     mesh = trimesh.load(mesh_path)
     if isinstance(mesh, trimesh.Scene):

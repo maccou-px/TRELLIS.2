@@ -29,13 +29,14 @@ def to_glb(
     mesh_cluster_refine_iterations=0,
     mesh_cluster_global_iterations=1,
     mesh_cluster_smooth_strength=1,
+    geometry_only: bool = False,
     verbose: bool = False,
     use_tqdm: bool = False,
 ):
     """
     Convert an extracted mesh to a GLB file.
     Performs cleaning, optional remeshing, UV unwrapping, and texture baking from a volume.
-    
+
     Args:
         vertices: (N, 3) tensor of vertex positions
         faces: (M, 3) tensor of vertex indices
@@ -54,6 +55,7 @@ def to_glb(
         mesh_cluster_refine_iterations: number of iterations for refining clusters in uv unwrapping
         mesh_cluster_global_iterations: number of global iterations for clustering in uv unwrapping
         mesh_cluster_smooth_strength: strength of smoothing for clustering in uv unwrapping
+        geometry_only: if True, skip UV unwrapping and texture baking (returns mesh with only geometry)
         verbose: whether to print verbose messages
         use_tqdm: whether to use tqdm to display progress bar
     """
@@ -93,7 +95,8 @@ def to_glb(
     assert grid_size.dim() == 1 and grid_size.size(0) == 3
     
     if use_tqdm:
-        pbar = tqdm(total=6, desc="Extracting GLB")
+        total_steps = 3 if geometry_only else 6
+        pbar = tqdm(total=total_steps, desc="Extracting GLB" if not geometry_only else "Extracting geometry")
     if verbose:
         print(f"Original mesh: {vertices.shape[0]} vertices, {faces.shape[0]} faces")
 
@@ -190,8 +193,39 @@ def to_glb(
         pbar.update(1)
     if verbose:
         print("Done")
-        
-    
+
+    # --- Early return for geometry-only mode ---
+    if geometry_only:
+        out_vertices, out_faces = mesh.read()
+        mesh.compute_vertex_normals()
+        out_normals = mesh.read_vertex_normals()
+
+        if verbose:
+            print("Finalizing geometry-only mesh...", end='', flush=True)
+
+        vertices_np = out_vertices.cpu().numpy()
+        faces_np = out_faces.cpu().numpy()
+        normals_np = out_normals.cpu().numpy()
+
+        # Swap Y and Z axes, invert Y (common conversion for GLB compatibility)
+        vertices_np[:, 1], vertices_np[:, 2] = vertices_np[:, 2], -vertices_np[:, 1]
+        normals_np[:, 1], normals_np[:, 2] = normals_np[:, 2], -normals_np[:, 1]
+
+        geometry_mesh = trimesh.Trimesh(
+            vertices=vertices_np,
+            faces=faces_np,
+            vertex_normals=normals_np,
+            process=False,
+        )
+
+        if use_tqdm:
+            pbar.close()
+        if verbose:
+            print("Done")
+
+        return geometry_mesh
+
+
     # --- UV Parameterization ---
     if use_tqdm:
         pbar.set_description("Parameterizing new mesh")
