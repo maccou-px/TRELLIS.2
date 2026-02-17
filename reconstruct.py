@@ -122,8 +122,7 @@ def save_mesh(mesh, output_path):
 def main():
     shape_enc, shape_dec = load_shape_models()
 
-    # mesh_path = "/home/martinaccou/work/TRELLIS.2/data/bracket.stl"
-    mesh_path = "/home/martinaccou/work/TRELLIS.2/data/plane.stl"
+    mesh_path = "/home/jovyan/TRELLIS.2/data/bracket.stl"
     mesh = trimesh.load(mesh_path)
     if isinstance(mesh, trimesh.Scene):
         mesh = list(mesh.geometry.values())[0]

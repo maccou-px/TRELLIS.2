@@ -54,6 +54,7 @@ Data processing is streamlined for instant conversions that are fully **renderin
 
 
 ## 🛠️ Installation
+git submodule update --init --recursive for having o-oxel third parties
 
 ### Prerequisites
 - **System**: The code is currently tested only on **Linux**.
