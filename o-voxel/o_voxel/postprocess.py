@@ -343,10 +343,11 @@ def to_glb(
     uvs_np = out_uvs.cpu().numpy()
     normals_np = out_normals.cpu().numpy()
     
+    print("Skip coordinate system conversion for GLB compatibility (keep Y up, Z forward)")
     # Swap Y and Z axes, invert Y (common conversion for GLB compatibility)
-    vertices_np[:, 1], vertices_np[:, 2] = vertices_np[:, 2], -vertices_np[:, 1]
-    normals_np[:, 1], normals_np[:, 2] = normals_np[:, 2], -normals_np[:, 1]
-    uvs_np[:, 1] = 1 - uvs_np[:, 1] # Flip UV V-coordinate
+    # vertices_np[:, 1], vertices_np[:, 2] = vertices_np[:, 2], -vertices_np[:, 1]
+    # normals_np[:, 1], normals_np[:, 2] = normals_np[:, 2], -normals_np[:, 1]
+    # uvs_np[:, 1] = 1 - uvs_np[:, 1] # Flip UV V-coordinate
     
     textured_mesh = trimesh.Trimesh(
         vertices=vertices_np,
