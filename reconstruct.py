@@ -42,7 +42,7 @@ def encode_decode_shape(encoder, decoder, vertices, faces, resolution=512):
         )
     )
 
-    # dual_vertices = dual_vertices * resolution - voxel_indices
+    dual_vertices = dual_vertices * resolution - voxel_indices
 
     # add the batch dimension, 0 because we only have one mesh here!
     coords = torch.cat(
@@ -127,8 +127,8 @@ def save_mesh(mesh, output_path):
 def main():
     shape_enc, shape_dec = load_shape_models()
 
-    # mesh_path = "/home/jovyan/TRELLIS.2/data/plane.stl"
-    mesh_path = "/home/jovyan/TRELLIS.2/data/bracket.stl"
+    mesh_path = "/home/jovyan/TRELLIS.2/data/plane.stl"
+    # mesh_path = "/home/jovyan/TRELLIS.2/data/bracket.stl"
     mesh = trimesh.load(mesh_path)
     if isinstance(mesh, trimesh.Scene):
         mesh = list(mesh.geometry.values())[0]
