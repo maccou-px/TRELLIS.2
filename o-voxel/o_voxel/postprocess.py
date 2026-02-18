@@ -208,8 +208,8 @@ def to_glb(
         normals_np = out_normals.cpu().numpy()
 
         # Swap Y and Z axes, invert Y (common conversion for GLB compatibility)
-        vertices_np[:, 1], vertices_np[:, 2] = vertices_np[:, 2], -vertices_np[:, 1]
-        normals_np[:, 1], normals_np[:, 2] = normals_np[:, 2], -normals_np[:, 1]
+        # vertices_np[:, 1], vertices_np[:, 2] = vertices_np[:, 2], -vertices_np[:, 1]
+        # normals_np[:, 1], normals_np[:, 2] = normals_np[:, 2], -normals_np[:, 1]
 
         geometry_mesh = trimesh.Trimesh(
             vertices=vertices_np,
