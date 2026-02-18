@@ -20,8 +20,10 @@ def load_shape_models():
 
     return shape_enc, shape_dec
 
+
 shape_enc, shape_dec = load_shape_models()
 resolution = 1024
+
 
 def normalize_mesh(mesh):
     """Normalize mesh vertices to unit cube."""
@@ -31,7 +33,7 @@ def normalize_mesh(mesh):
     bounding_box_min = vertices.min(dim=0).values
     bounding_box_max = vertices.max(dim=0).values
     center = (bounding_box_max + bounding_box_min) / 2.0
-    scale = 0.99999 / (bounding_box_max - bounding_box_min).max() 
+    scale = 0.99999 / (bounding_box_max - bounding_box_min).max()
 
     vertices = (vertices - center) * scale
 
@@ -39,6 +41,7 @@ def normalize_mesh(mesh):
 
 
 def encode_decode_shape(encoder, decoder, vertices, faces, resolution=512):
+    # voxel indices are 0-indexed.
     voxel_indices, dual_vertices, intersected = (
         o_voxel.convert.mesh_to_flexible_dual_grid(
             vertices,
@@ -48,6 +51,11 @@ def encode_decode_shape(encoder, decoder, vertices, faces, resolution=512):
         )
     )
 
+    # Convert dual_vertices from world-normalized [0,1] space to voxel-local [0,1] space.
+    # Example with resolution=10: voxel_indices=[5,3,7], dual_vertices=[0.52, 0.31, 0.73]
+    #   dual_vertices * 10 = [5.2, 3.1, 7.3]  (fractional grid position)
+    #   - voxel_indices    = [0.2, 0.1, 0.3]  (offset within the voxel)
+    # This removes positional bias so the model can focus on local surface geometry rather than global position.
     dual_vertices = dual_vertices * resolution - voxel_indices
 
     # add the batch dimension, 0 because we only have one mesh here!
@@ -61,6 +69,8 @@ def encode_decode_shape(encoder, decoder, vertices, faces, resolution=512):
         latent = encoder(
             vertices_sparse, intersected_sparse
         )  # Downsampling happens here, TODO: understand why
+        # downsampling is sparse, SparseDownsample(2) merges any 2×2×2 block that contains at least one occupie voxel into a single coarser voxel.
+        # so there is no deterministic mapping from input voxels to output voxels
         decoder.set_resolution(resolution)
         meshes, subs = decoder(latent, return_subs=True)
 
@@ -75,10 +85,16 @@ def postprocess_with_default_texture(mesh, subs, resolution):
         "alpha": slice(5, 6),
     }
 
-    print(f"[DEBUG] Input mesh: {mesh.vertices.shape[0]} vertices, {mesh.faces.shape[0]} faces")
-    print(f"[DEBUG] Vertices bounds: {mesh.vertices.min(0)[0]} to {mesh.vertices.max(0)[0]}")
+    print(
+        f"[DEBUG] Input mesh: {mesh.vertices.shape[0]} vertices, {mesh.faces.shape[0]} faces"
+    )
+    print(
+        f"[DEBUG] Vertices bounds: {mesh.vertices.min(0)[0]} to {mesh.vertices.max(0)[0]}"
+    )
     mesh.fill_holes()
-    print(f"[DEBUG] After fill_holes: {mesh.vertices.shape[0]} vertices, {mesh.faces.shape[0]} faces")
+    print(
+        f"[DEBUG] After fill_holes: {mesh.vertices.shape[0]} vertices, {mesh.faces.shape[0]} faces"
+    )
 
     # Create default white material
     sub = subs[-1]
@@ -102,7 +118,9 @@ def postprocess_with_default_texture(mesh, subs, resolution):
     )
 
     mesh_with_voxel.simplify(16777216)
-    print(f"[DEBUG] After simplify: {mesh_with_voxel.vertices.shape[0]} vertices, {mesh_with_voxel.faces.shape[0]} faces")
+    print(
+        f"[DEBUG] After simplify: {mesh_with_voxel.vertices.shape[0]} vertices, {mesh_with_voxel.faces.shape[0]} faces"
+    )
 
     glb = o_voxel.postprocess.to_glb(
         vertices=mesh_with_voxel.vertices,
@@ -131,10 +149,14 @@ def save_mesh(mesh, output_path):
 
 
 def run_one(sample_name: str):
-    export_path = Path("/flux/vault/99_dev_martin/reconstruction") / sample_name / f"{sample_name}_reconstructed.stl"
-    if export_path.exists():
-        print(f"Reconstructed mesh already exists at {export_path}, skipping...")
-        return
+    export_path = (
+        Path("/flux/vault/99_dev_martin/reconstruction")
+        / sample_name
+        / f"{sample_name}_reconstructed.stl"
+    )
+    # if export_path.exists():
+    #     print(f"Reconstructed mesh already exists at {export_path}, skipping...")
+    # return
     mesh_path = f"/flux/vault/Conventional_Airplanes_geoms/{sample_name}.stl"
 
     mesh = trimesh.load(mesh_path)
@@ -154,12 +176,15 @@ def run_one(sample_name: str):
     export_path.parent.mkdir(parents=True, exist_ok=True)
     glb_mesh.export(export_path)
 
+
 def main():
     data_path = Path("/flux/vault/Conventional_Airplanes_geoms/")
-    for sample_path in data_path.glob("*.stl"):
-        sample = sample_path.stem
-        print(f"Processing sample: {sample}")
-        run_one(sample)
+    run_one("sample_20242312_1")
+    # for sample_path in data_path.glob("*.stl"):
+    #     sample = sample_path.stem
+    #     print(f"Processing sample: {sample}")
+    #     run_one(sample)
+
 
 if __name__ == "__main__":
     main()
