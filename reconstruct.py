@@ -1,4 +1,5 @@
 # cf https://github.com/microsoft/TRELLIS.2/issues/53
+from pathlib import Path
 import torch
 import trimesh
 import o_voxel
@@ -18,6 +19,9 @@ def load_shape_models():
         model.cuda().eval()
 
     return shape_enc, shape_dec
+
+shape_enc, shape_dec = load_shape_models()
+resolution = 1024
 
 def normalize_mesh(mesh):
     """Normalize mesh vertices to unit cube."""
@@ -126,17 +130,18 @@ def save_mesh(mesh, output_path):
     ).export(output_path)
 
 
-def main():
-    shape_enc, shape_dec = load_shape_models()
+def run_one(sample_name: str):
+    export_path = Path("/flux/vault/99_dev_martin/reconstruction") / sample_name / f"{sample_name}_reconstructed.stl"
+    if export_path.exists():
+        print(f"Reconstructed mesh already exists at {export_path}, skipping...")
+        return
+    mesh_path = f"/flux/vault/Conventional_Airplanes_geoms/{sample_name}.stl"
 
-    mesh_path = "/home/jovyan/TRELLIS.2/data/plane.stl"
-    # mesh_path = "/home/jovyan/TRELLIS.2/data/bracket.stl"
     mesh = trimesh.load(mesh_path)
     if isinstance(mesh, trimesh.Scene):
         mesh = list(mesh.geometry.values())[0]
     vertices, faces = normalize_mesh(mesh)
 
-    resolution = 1024
     print("Encoding and decoding shape...")
     shape_mesh, subs = encode_decode_shape(
         shape_enc, shape_dec, vertices, faces, resolution=resolution
@@ -145,8 +150,16 @@ def main():
 
     print("Postprocessing mesh with default texture...")
     glb_mesh = postprocess_with_default_texture(shape_mesh, subs, resolution)
-    glb_mesh.export("reconstructed_mesh_postprocessed.glb")
 
+    export_path.parent.mkdir(parents=True, exist_ok=True)
+    glb_mesh.export(export_path)
+
+def main():
+    data_path = Path("/flux/vault/Conventional_Airplanes_geoms/")
+    for sample_path in data_path.glob("*.stl"):
+        sample = sample_path.stem
+        print(f"Processing sample: {sample}")
+        run_one(sample)
 
 if __name__ == "__main__":
     main()
