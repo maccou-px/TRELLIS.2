@@ -19,14 +19,16 @@ def load_shape_models():
 
     return shape_enc, shape_dec
 
-
 def normalize_mesh(mesh):
     """Normalize mesh vertices to unit cube."""
     vertices = torch.from_numpy(mesh.vertices).float()
     faces = torch.from_numpy(mesh.faces).long()
 
-    center = (vertices.min(0)[0] + vertices.max(0)[0]) / 2
-    scale = 0.99999 / (vertices.max(0)[0] - vertices.min(0)[0]).max()
+    bounding_box_min = vertices.min(dim=0).values
+    bounding_box_max = vertices.max(dim=0).values
+    center = (bounding_box_max + bounding_box_min) / 2.0
+    scale = 0.99999 / (bounding_box_max - bounding_box_min).max() 
+
     vertices = (vertices - center) * scale
 
     return vertices, faces
