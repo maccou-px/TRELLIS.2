@@ -1,0 +1,1 @@
+python train.py --config configs/gen/ss_flow_img_dit_1_3B_64_bf16.json --output_dir results/ss_flow_img_dit_1_3B_64_bf16 --data_dir {"ObjaverseXL_sketchfab": {"base": "datasets/ObjaverseXL_sketchfab", "ss_latent": "datasets/ObjaverseXL_sketchfab/ss_latents/ss_enc_conv3d_16l8_fp16_64", "render_cond": "datasets/ObjaverseXL_sketchfab/renders_cond"}}
