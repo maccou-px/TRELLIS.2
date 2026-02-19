@@ -10,6 +10,7 @@ from trellis2.representations import MeshWithVoxel
 
 def load_shape_models():
     shape_enc = models.from_pretrained(
+        # Next-DC block type (the sparse ConvNeXt-style blocks used in the UNet)
         "microsoft/TRELLIS.2-4B/ckpts/shape_enc_next_dc_f16c32_fp16"
     )
     shape_dec = models.from_pretrained(
@@ -68,7 +69,7 @@ def encode_decode_shape(encoder, decoder, vertices, faces, resolution=512):
     with torch.no_grad():
         latent = encoder(
             vertices_sparse, intersected_sparse
-        )  # Downsampling happens here, TODO: understand why
+        )  # Downsampling happens here.
         # downsampling is sparse, SparseDownsample(2) merges any 2×2×2 block that contains at least one occupie voxel into a single coarser voxel.
         # so there is no deterministic mapping from input voxels to output voxels
         decoder.set_resolution(resolution)
