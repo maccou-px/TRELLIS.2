@@ -109,7 +109,7 @@ class FlowMatchingTrainer(BasicTrainer):
         """
         return cond
     
-    def get_inference_cond(self, cond, **kwargs):
+    def get_inference_cond(self, cond=None, **kwargs):
         """
         Get the conditioning data for inference.
         """

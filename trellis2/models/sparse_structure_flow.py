@@ -221,7 +221,7 @@ class SparseStructureFlowModel(nn.Module):
             nn.init.constant_(self.out_layer.weight, 0)
             nn.init.constant_(self.out_layer.bias, 0)
 
-    def forward(self, x: torch.Tensor, t: torch.Tensor, cond: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, t: torch.Tensor, cond: Optional[torch.Tensor] = None) -> torch.Tensor:
         assert [*x.shape] == [x.shape[0], self.in_channels, *[self.resolution] * 3], \
                 f"Input shape mismatch, got {x.shape}, expected {[x.shape[0], self.in_channels, *[self.resolution] * 3]}"
 
@@ -235,7 +235,8 @@ class SparseStructureFlowModel(nn.Module):
             t_emb = self.adaLN_modulation(t_emb)
         t_emb = manual_cast(t_emb, self.dtype)
         h = manual_cast(h, self.dtype)
-        cond = manual_cast(cond, self.dtype)
+        if cond is not None:
+            cond = manual_cast(cond, self.dtype)
         for block in self.blocks:
             h = block(h, t_emb, cond, self.rope_phases)
         h = manual_cast(h, x.dtype)

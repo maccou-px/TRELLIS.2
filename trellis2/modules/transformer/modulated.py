@@ -102,7 +102,6 @@ class ModulatedTransformerCrossBlock(nn.Module):
         self.use_checkpoint = use_checkpoint
         self.share_mod = share_mod
         self.norm1 = LayerNorm32(channels, elementwise_affine=False, eps=1e-6)
-        self.norm2 = LayerNorm32(channels, elementwise_affine=True, eps=1e-6)
         self.norm3 = LayerNorm32(channels, elementwise_affine=False, eps=1e-6)
         self.self_attn = MultiHeadAttention(
             channels,
@@ -116,15 +115,17 @@ class ModulatedTransformerCrossBlock(nn.Module):
             rope_freq=rope_freq,
             qk_rms_norm=qk_rms_norm,
         )
-        self.cross_attn = MultiHeadAttention(
-            channels,
-            ctx_channels=ctx_channels,
-            num_heads=num_heads,
-            type="cross",
-            attn_mode="full",
-            qkv_bias=qkv_bias,
-            qk_rms_norm=qk_rms_norm_cross,
-        )
+        if ctx_channels > 0:
+            self.norm2 = LayerNorm32(channels, elementwise_affine=True, eps=1e-6)
+            self.cross_attn = MultiHeadAttention(
+                channels,
+                ctx_channels=ctx_channels,
+                num_heads=num_heads,
+                type="cross",
+                attn_mode="full",
+                qkv_bias=qkv_bias,
+                qk_rms_norm=qk_rms_norm_cross,
+            )
         self.mlp = FeedForwardNet(
             channels,
             mlp_ratio=mlp_ratio,
@@ -147,9 +148,10 @@ class ModulatedTransformerCrossBlock(nn.Module):
         h = self.self_attn(h, phases=phases)
         h = h * gate_msa.unsqueeze(1)
         x = x + h
-        h = self.norm2(x)
-        h = self.cross_attn(h, context)
-        x = x + h
+        if hasattr(self, 'cross_attn'):
+            h = self.norm2(x)
+            h = self.cross_attn(h, context)
+            x = x + h
         h = self.norm3(x)
         h = h * (1 + scale_mlp.unsqueeze(1)) + shift_mlp.unsqueeze(1)
         h = self.mlp(h)
