@@ -1,5 +1,14 @@
 ![](assets/teaser.webp)
 
+```
+  python train.py \
+    --config configs/gen/ss_flow_img_dit_1_3B_64_bf16.json \
+    --output_dir results/ss_flow_img_dit_1_3B_64_bf16 \
+    --data_dir "{\"ObjaverseXL_github\": {\"base\": \"datasets/ObjaverseXL_github\", \"ss_latent\":
+  \"datasets/ObjaverseXL_github/ss_latents/ss_enc_conv3d_16l8_fp16_64\", \"render_cond\":
+  \"datasets/ObjaverseXL_github/renders_cond\"}}"
+```
+
 # Native and Compact Structured Latents for 3D Generation
 
 <a href="https://arxiv.org/abs/2512.14692"><img src="https://img.shields.io/badge/Paper-Arxiv-b31b1b.svg" alt="Paper"></a>

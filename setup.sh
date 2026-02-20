@@ -1,3 +1,6 @@
+# Also consider this PR (https://github.com/microsoft/TRELLIS.2/pull/112/changes) if issues when installing. 
+# In particular for flash attention: pip install flash-attn==2.7.3 --no-build-isolation --no-cache-dir
+
 # Read Arguments
 TEMP=`getopt -o h --long help,new-env,basic,flash-attn,cumesh,o-voxel,flexgemm,nvdiffrast,nvdiffrec -n 'setup.sh' -- "$@"`
 
@@ -140,5 +143,3 @@ if [ "$OVOXEL" = true ] ; then
 fi
 
 pip install "transformers<5.0.0"
-
-# Also consider this PR (https://github.com/microsoft/TRELLIS.2/pull/112/changes) if issues when installing. 
