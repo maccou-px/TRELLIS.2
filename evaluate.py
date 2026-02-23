@@ -2,10 +2,10 @@
 Evaluation script.
 
 --- Mode 1: custom trained checkpoint ---
-    python evaluate_unconditioned.py --checkpoint results/planes_ss_flow_no_cond_1_3B_64_bf16/ckpts/denoiser_ema0.9999_step0000100.pt --config results/ss_flow_no_cond_1_3B_64_bf16/config.json --data_dir "{\"ObjaverseXL_github\": {\"base\": \"datasets/ObjaverseXL_github\", \"ss_latent\": \"datasets/ObjaverseXL_github/ss_latents/ss_enc_conv3d_16l8_fp16_64\"}}" --output eval_output/ --num_samples 16 --steps 50 --seed 42
+    python evaluate.py --checkpoint results/planes_ss_flow_no_cond_1_3B_64_bf16/ckpts/denoiser_ema0.9999_step0000100.pt --config results/ss_flow_no_cond_1_3B_64_bf16/config.json --data_dir "{\"ObjaverseXL_github\": {\"base\": \"datasets/ObjaverseXL_github\", \"ss_latent\": \"datasets/ObjaverseXL_github/ss_latents/ss_enc_conv3d_16l8_fp16_64\"}}" --output eval_output/ --num_samples 16 --steps 50 --seed 42
 
 --- Mode 2: pretrained Microsoft checkpoint (image-conditioned, run with null cond) ---
-    python evaluate_unconditioned.py \
+    python evaluate.py \
         --pretrained /flux/vault/pretrained_checkpoints/trellis/ss_flow_img_dit_1_3B_64_bf16 \
         --ss_dec     /flux/vault/pretrained_checkpoints/trellis/ss_dec_conv3d_16l8_fp16 \
         --output     eval_output_pretrained/ \
