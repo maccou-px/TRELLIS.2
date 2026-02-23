@@ -211,3 +211,4 @@ __marimo__/
 /datasets
 /results
 /eval_output
+/eval_output_pretrained
