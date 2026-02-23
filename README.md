@@ -17,7 +17,13 @@ python train.py \
     --config configs/gen/ss_flow_no_cond_1_3B_64_bf16.json \
     --output_dir results/planes_ss_flow_no_cond_1_3B_64_bf16 \
     --data_dir "{\"planes_subset\": {\"base\": \"/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes_subset\", \"ss_latent\": \"/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes_subset/ss_latents/ss_enc_conv3d_16l8_fp16_64\"}}"
+
+python train.py \
+    --config configs/gen/ss_flow_no_cond_1_3B_64_bf16.json \
+    --output_dir results/planes_ss_flow_no_cond_1_3B_64_bf16 \
+    --data_dir "{\"planes\": {\"base\": \"/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes\", \"ss_latent\": \"/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes/ss_latents/ss_enc_conv3d_16l8_fp16_64\"}}"
 ```
+
 
 
 # Native and Compact Structured Latents for 3D Generation
