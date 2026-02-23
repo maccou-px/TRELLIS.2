@@ -150,15 +150,11 @@ def save_mesh(mesh, output_path):
 
 
 def run_one(sample_name: str):
-    export_path = (
-        Path("/flux/vault/99_dev_martin/reconstruction")
-        / sample_name
-        / f"{sample_name}_reconstructed.stl"
-    )
+    export_path = Path(".") / sample_name / f"{sample_name}_reconstructed.stl"
     # if export_path.exists():
     #     print(f"Reconstructed mesh already exists at {export_path}, skipping...")
     # return
-    mesh_path = f"/flux/vault/Conventional_Airplanes_geoms/{sample_name}.stl"
+    mesh_path = f"/home/jovyan/TRELLIS.2/data/{sample_name}.stl"
 
     mesh = trimesh.load(mesh_path)
     if isinstance(mesh, trimesh.Scene):
@@ -179,8 +175,8 @@ def run_one(sample_name: str):
 
 
 def main():
-    data_path = Path("/flux/vault/Conventional_Airplanes_geoms/")
-    run_one("sample_20242312_1")
+    data_path = Path("/home/jovyan/TRELLIS.2/data")
+    run_one("fins")
     # for sample_path in data_path.glob("*.stl"):
     #     sample = sample_path.stem
     #     print(f"Processing sample: {sample}")
