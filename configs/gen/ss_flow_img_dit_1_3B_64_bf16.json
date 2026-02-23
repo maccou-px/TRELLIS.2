@@ -57,10 +57,10 @@
                     "clip_percentile": 95
                 }
             },
-            "i_log": 1,
-            "i_print": 1,
-            "i_sample": 1,
-            "i_save": 100,
+            "i_log": 100,
+            "i_print": 100,
+            "i_sample": 100,
+            "i_save": 500,
             "p_uncond": 0.1,
             "t_schedule": {
                 "name": "logitNormal",
