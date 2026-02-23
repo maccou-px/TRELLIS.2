@@ -7,6 +7,11 @@
     --data_dir "{\"ObjaverseXL_github\": {\"base\": \"datasets/ObjaverseXL_github\", \"ss_latent\":
   \"datasets/ObjaverseXL_github/ss_latents/ss_enc_conv3d_16l8_fp16_64\", \"render_cond\":
   \"datasets/ObjaverseXL_github/renders_cond\"}}"
+
+  python train.py \
+    --config configs/gen/ss_flow_no_cond_1_3B_64_bf16.json \
+    --output_dir results/ss_flow_no_cond_1_3B_64_bf16 \
+    --data_dir "{\"ObjaverseXL_github\": {\"base\": \"datasets/ObjaverseXL_github\", \"ss_latent\": \"datasets/ObjaverseXL_github/ss_latents/ss_enc_conv3d_16l8_fp16_64\"}}"
 ```
 
 # Native and Compact Structured Latents for 3D Generation

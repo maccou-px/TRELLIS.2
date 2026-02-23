@@ -1,0 +1,1 @@
+python train.py --config configs/gen/ss_flow_no_cond_1_3B_64_bf16.json --output_dir ./outputs/ss_no_cond

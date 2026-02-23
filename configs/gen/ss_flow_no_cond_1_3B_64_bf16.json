@@ -7,7 +7,7 @@
                 "in_channels": 8,
                 "out_channels": 8,
                 "model_channels": 1536,
-                "cond_channels": 1024,
+                "cond_channels": 0,
                 "num_blocks": 3,
                 "num_heads": 12,
                 "mlp_ratio": 5.3334,
@@ -20,15 +20,14 @@
         }
     },
     "dataset": {
-        "name": "ImageConditionedSparseStructureLatent",
+        "name": "SparseStructureLatent",
         "args": {
             "min_aesthetic_score": 4.5,
-            "image_size": 512,
             "pretrained_ss_dec": "microsoft/TRELLIS-image-large/ckpts/ss_dec_conv3d_16l8_fp16"
         }
     },
     "trainer": {
-        "name": "ImageConditionedFlowMatchingCFGTrainer",
+        "name": "FlowMatchingTrainer",
         "args": {
             "max_steps": 1000000,
             "batch_size_per_gpu": 1,
@@ -61,7 +60,6 @@
             "i_print": 1,
             "i_sample": 1,
             "i_save": 100,
-            "p_uncond": 0.1,
             "t_schedule": {
                 "name": "logitNormal",
                 "args": {
@@ -69,14 +67,7 @@
                     "std": 1.0
                 }
             },
-            "sigma_min": 1e-5,
-            "image_cond_model": {
-                "name": "DinoV3FeatureExtractor",
-                "args": {
-                    "model_name": "facebook/dinov3-vitl16-pretrain-lvd1689m",
-                    "image_size": 512
-                }
-            }
+            "sigma_min": 1e-5
         }
     }
 }

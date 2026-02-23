@@ -109,7 +109,7 @@ class FlowMatchingTrainer(BasicTrainer):
         """
         return cond
     
-    def get_inference_cond(self, cond, **kwargs):
+    def get_inference_cond(self, cond=None, **kwargs):
         """
         Get the conditioning data for inference.
         """
@@ -216,7 +216,7 @@ class FlowMatchingTrainer(BasicTrainer):
                 self.models['denoiser'],
                 noise=noise,
                 **args,
-                steps=50, guidance_strength=3.0, verbose=verbose,
+                steps=50, verbose=verbose,
             )
             sample.append(res.samples)
 
