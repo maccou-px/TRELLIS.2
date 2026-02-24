@@ -4,12 +4,13 @@
             "name": "Slat2Scalar",
             "args": {
                 "out_channels": 2,
+                "cond_dim": 2,
                 "latent_channels": 32,
-                "model_channels": 512,
-                "num_blocks": 2,
-                "num_heads": 8,
+                "model_channels": 32,
+                "num_blocks": 1,
+                "num_heads": 1,
                 "dropout": 0.1,
-                "mlp_ratio": 4.0,
+                "mlp_ratio": 2.0,
                 "attn_mode": "full",
                 "use_rope": true,
                 "qk_rms_norm": false,
@@ -23,18 +24,22 @@
         "args": {
             "sim_csv": "/flux/vault/Conventional_Airplanes_sims/stability_paper_sweep.csv",
             "latent_meta_csv": "/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes/metadata.csv",
-            "target_keys": ["Cd no_shear", "Cl no_shear"],
-            "normalize_targets": true
+            "sample_names_csv": "/flux/vault/Conventional_Airplanes_sims/train.csv",
+            "join_key": "raw_filename",
+            "target_keys": ["Cd", "Cl"],
+            "cond_keys": ["AoA_deg", "Yaw_deg"]
         }
     },
     "trainer": {
         "name": "RewardTrainer",
         "args": {
-            "test_split": 0.2,
-            "test_split_seed": 42,
-            "target_keys": ["Cd no_shear", "Cl no_shear"],
+            "eval_splits": {
+                "test": "/flux/vault/Conventional_Airplanes_sims/test.csv",
+                "val": "/flux/vault/Conventional_Airplanes_sims/validation.csv"
+            },
             "max_steps": 1000,
-            "batch_size_per_gpu": 16,
+            "batch_size_per_gpu": 32,
+            "snapshot_batch_size": 256,
             "batch_split": 1,
             "optimizer": {
                 "name": "AdamW",
@@ -43,9 +48,7 @@
                     "weight_decay": 0.05
                 }
             },
-            "ema_rate": [
-                0.9999
-            ],
+            "ema_rate": [],
             "fp16_mode": "inflat_all",
             "fp16_scale_growth": 0.001,
             "grad_clip": {
@@ -55,9 +58,9 @@
                     "clip_percentile": 95
                 }
             },
-            "i_log": 100,
-            "i_sample": 100,
-            "i_save": 100
+            "i_log": 10,
+            "i_sample": 200,
+            "i_save": 200
         }
     }
 }
