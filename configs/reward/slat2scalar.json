@@ -1,0 +1,63 @@
+{
+    "models": {
+        "model": {
+            "name": "Slat2Scalar",
+            "args": {
+                "out_channels": 2,
+                "latent_channels": 32,
+                "model_channels": 512,
+                "num_blocks": 2,
+                "num_heads": 8,
+                "dropout": 0.1,
+                "mlp_ratio": 4.0,
+                "attn_mode": "full",
+                "use_rope": true,
+                "qk_rms_norm": false,
+                "use_checkpoint": false,
+                "dtype": "bfloat16"
+            }
+        }
+    },
+    "dataset": {
+        "name": "RewardDataset",
+        "args": {
+            "sim_csv": "/flux/vault/Conventional_Airplanes_sims/stability_paper_sweep.csv",
+            "latent_meta_csv": "/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes/metadata.csv",
+            "target_keys": ["Cd no_shear", "Cl no_shear"],
+            "normalize_targets": true
+        }
+    },
+    "trainer": {
+        "name": "RewardTrainer",
+        "args": {
+            "test_split": 0.2,
+            "test_split_seed": 42,
+            "target_keys": ["Cd no_shear", "Cl no_shear"],
+            "max_steps": 1000,
+            "batch_size_per_gpu": 16,
+            "batch_split": 1,
+            "optimizer": {
+                "name": "AdamW",
+                "args": {
+                    "lr": 1e-4,
+                    "weight_decay": 0.05
+                }
+            },
+            "ema_rate": [
+                0.9999
+            ],
+            "fp16_mode": "inflat_all",
+            "fp16_scale_growth": 0.001,
+            "grad_clip": {
+                "name": "AdaptiveGradClipper",
+                "args": {
+                    "max_norm": 1.0,
+                    "clip_percentile": 95
+                }
+            },
+            "i_log": 100,
+            "i_sample": 100,
+            "i_save": 100
+        }
+    }
+}
