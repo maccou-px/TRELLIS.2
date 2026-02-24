@@ -21,7 +21,7 @@ __attributes = {
     'DinoV2FeatureExtractor': 'flow_matching.mixins.image_conditioned',
     'DinoV3FeatureExtractor': 'flow_matching.mixins.image_conditioned',
 
-    'RewardTrainer': 'reward.latent_scalar',
+    'RewardTrainer': 'reward',
 }
 
 __submodules = []

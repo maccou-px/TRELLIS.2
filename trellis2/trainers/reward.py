@@ -9,9 +9,9 @@ import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from ..basic import BasicTrainer
-from ...datasets.reward import RewardDataset
-from ...utils.data_utils import recursive_to_device
+from .basic import BasicTrainer
+from ..datasets.reward import RewardDataset
+from ..utils.data_utils import recursive_to_device
 
 
 class RewardTrainer(BasicTrainer):
@@ -81,9 +81,10 @@ class RewardTrainer(BasicTrainer):
     def run_snapshot(self, suffix=None, **kwargs):
         all_metrics, all_preds = {}, {}
         for name, ds in self.eval_splits.items():
-            p, t = self._predict(ds, name)
+            p, t = self._predict(ds, name, one_batch=(suffix != 'final'))
             all_metrics[name] = self._metrics(p, t)
             all_preds[name] = (p, t)
+        flat = {f'{n}/{k}': v for n, m in all_metrics.items() for k, v in m.items()}
 
         if self.is_master:
             names = list(all_metrics.keys())
@@ -91,26 +92,25 @@ class RewardTrainer(BasicTrainer):
             print(f'  {"":>20s} ' + ' / '.join(f'{n:>10s}' for n in names))
             for k in keys:
                 print(f'  {k:>20s} ' + ' / '.join(f'{all_metrics[n][k]:>10.4f}' for n in names))
-
-            if suffix:
-                out = os.path.join(self.output_dir, 'samples', suffix)
-                os.makedirs(out, exist_ok=True)
-                denorm = self.dataset.get_denormalize_fn()
-                self._plot(all_preds, out, denorm)
-
-        flat = {f'{n}/{k}': v for n, m in all_metrics.items() for k, v in m.items()}
-        if self.is_master:
             for k, v in flat.items():
                 self.writer.add_scalar(f'eval/{k}', v, self.step)
+
+            if suffix:
+                save_dir = os.path.join(self.output_dir, 'samples', suffix)
+                os.makedirs(save_dir, exist_ok=True)
+                self._plot(all_preds, save_dir, self.dataset.get_denormalize_fn())
+
         return flat
 
-    def _predict(self, ds, desc='eval'):
+    def _predict(self, ds, desc='eval', one_batch=False):
         loader = DataLoader(ds, batch_size=self.eval_batch_size, shuffle=False, collate_fn=ds.collate_fn)
         preds, targets = [], []
-        for data in tqdm(loader, desc=f'Eval {desc}', disable=not self.is_master):
+        for i, data in enumerate(tqdm(loader, desc=f'Eval {desc}', disable=not self.is_master)):
             data = recursive_to_device(data, 'cuda')
             preds.append(self.models['model'](**data).cpu())
             targets.append(data['y'].cpu())
+            if one_batch:
+                break
         p, t = torch.cat(preds), torch.cat(targets)
         if p.dim() == 1:
             p = p.unsqueeze(-1)
