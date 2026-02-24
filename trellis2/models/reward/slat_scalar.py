@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from functools import partial
 
 from ...modules import sparse as sp
-from ...modules.sparse.transformer import SparseTransformerBlock
+from ...modules.sparse.transformer import SparseTransformerBlock, ModulatedSparseTransformerBlock
 from ...modules.utils import convert_module_to, manual_cast, str_to_dtype
 
 
@@ -28,17 +28,18 @@ class Slat2Scalar(nn.Module):
     """
     def __init__(
         self,
-        out_channels: int = 2,
-        latent_channels: int = 32,
-        model_channels: int = 256,
-        num_blocks: int = 2,
-        num_heads: int = 8,
+        out_channels: int,
+        cond_dim: int,
+        latent_channels: int,
+        model_channels: int,
+        num_blocks: int,
+        num_heads: int,
         mlp_ratio: float = 4.0,
         attn_mode: str = 'full',
-        use_rope: bool = False,
+        use_rope: bool = True,
         qk_rms_norm: bool = False,
         use_checkpoint: bool = False,
-        dtype: str = 'float32',
+        dtype: str = 'bfloat16',
         dropout: float = 0.0,
     ):
         super().__init__()
@@ -50,10 +51,12 @@ class Slat2Scalar(nn.Module):
 
         # Input projection
         self.input_layer = sp.SparseLinear(latent_channels, model_channels)
+        self.cond_proj = nn.Linear(cond_dim, model_channels) if cond_dim > 0 else None
 
         # Transformer blocks
+        _block = ModulatedSparseTransformerBlock if cond_dim > 0 else SparseTransformerBlock
         self.blocks = nn.ModuleList([
-            SparseTransformerBlock(
+            _block(
                 channels=model_channels,
                 num_heads=num_heads,
                 mlp_ratio=mlp_ratio,
@@ -101,8 +104,12 @@ class Slat2Scalar(nn.Module):
         h = self.input_layer(x)
         h = manual_cast(h, self.dtype)
 
+        mod = None
+        if self.cond_proj is not None:
+            mod = manual_cast(self.cond_proj(kwargs["mod"]), self.dtype)
+
         for block in self.blocks:
-            h = block(h)
+            h = block(h, mod=mod)
 
         h = manual_cast(h, x.dtype)
         h = h.replace(F.layer_norm(h.feats, h.feats.shape[-1:]))
