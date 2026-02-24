@@ -855,7 +855,7 @@ class BasicTrainer:
 
             # Sample images
             if self.step % self.i_sample == 0:
-                self.snapshot()
+                self.snapshot(batch_size=self.snapshot_batch_size)
 
             if self.is_master:
                 self.log.append((self.step, {}))
