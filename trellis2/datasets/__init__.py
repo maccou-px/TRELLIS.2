@@ -14,6 +14,8 @@ __attributes = {
     'ImageConditionedSLatShape': 'structured_latent_shape',
     'SLatPbr': 'structured_latent_svpbr',
     'ImageConditionedSLatPbr': 'structured_latent_svpbr',
+
+    'RewardDataset' : 'reward',
 }
 
 __submodules = []
@@ -35,12 +37,14 @@ def __getattr__(name):
 
 
 # For Pylance
-if __name__ == '__main__':    
+if __name__ == '__main__':
     from .flexi_dual_grid import FlexiDualGridDataset
     from .sparse_voxel_pbr import SparseVoxelPbrDataset
-    
+
     from .sparse_structure_latent import SparseStructureLatent, ImageConditionedSparseStructureLatent
     from .structured_latent import SLat, ImageConditionedSLat
     from .structured_latent_shape import SLatShape, ImageConditionedSLatShape
     from .structured_latent_svpbr import SLatPbr, ImageConditionedSLatPbr
+
+    from .reward import RewardDataset
     
