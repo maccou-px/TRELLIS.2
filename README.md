@@ -1,6 +1,7 @@
 ![](assets/teaser.webp)
 
 ```
+  First stage
   python train.py \
     --config configs/gen/ss_flow_img_dit_1_3B_64_bf16.json \
     --output_dir results/ss_flow_img_dit_1_3B_64_bf16 \
@@ -22,8 +23,14 @@ python train.py \
     --config configs/gen/ss_flow_no_cond_1_3B_64_bf16.json \
     --output_dir /flux/vault/99_dev_martin/trellis_diffusion/results/big_planes_ss_flow_no_cond_1_3B_64_bf16 \
     --data_dir "{\"planes\": {\"base\": \"/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes\", \"ss_latent\": \"/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes/ss_latents/ss_enc_conv3d_16l8_fp16_64\"}}"
-```
 
+
+
+Second stage
+DINO_MODEL_PATH="/flux/vault/pretrained_checkpoints/dino" python train.py --config configs/gen/slat_flow_img2shape_dit_1_3B_512_bf16.json --output_dir /flux/vault/99_dev_martin/trellis_diffusion/results/slat_flow_img2shape_dit_1_3B_512_bf16 --data_dir "{\"ObjaverseXL_github\": {\"base\": \"datasets/ObjaverseXL_github\", \"shape_latent\": \"datasets/ObjaverseXL_github/shape_latents/shape_enc_next_dc_f16c32_fp16_512\", \"render_cond\": \"datasets/ObjaverseXL_github/renders_cond\"}}"
+
+
+```
 
 
 # Native and Compact Structured Latents for 3D Generation
