@@ -67,7 +67,10 @@
                     "std": 1.0
                 }
             },
-            "sigma_min": 1e-5
+            "sigma_min": 1e-5,
+            "finetune_ckpt": {
+                "denoiser": "/flux/vault/pretrained_checkpoints/trellis/ss_flow_img_dit_1_3B_64_bf16.safetensors"
+            }
         }
     }
 }

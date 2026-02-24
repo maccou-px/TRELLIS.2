@@ -86,6 +86,88 @@ OUTPUT GLB   textured 3D mesh
 
 ---
 
+## How data flows through the Sparse UNet decoder (FlexiDualGridVaeDecoder)
+
+### What a SparseTensor actually is
+
+Forget "3D volume". A `SparseTensor` is just two tables:
+
+```
+coords  [K, 4]   — integer (batch_idx, x, y, z) for each active voxel
+feats   [K, C]   — C floats of data for each active voxel
+```
+
+`K` is whatever it is. Nothing is padded to a fixed grid size.
+
+### Step-by-step through SparseUnetVaeDecoder.forward()
+
+Say K=5000 voxels come in at a coarse resolution (e.g. 128³ grid), with 32 latent channels.
+
+**1. `from_latent` — linear projection** (`sparse_unet_vae.py:482`)
+```
+feats:  [5000, 32]  →  [5000, 64]     # Linear on each row independently
+coords: [5000, 4]   unchanged
+```
+
+**2. Several conv blocks — process in place**
+```
+feats:  [5000, 64]  →  [5000, 64]     # sparse 3×3×3 conv gathers neighbors
+coords: [5000, 4]   unchanged          # K stays the same
+```
+
+**3. `SparseResBlockUpsample3d` — where K grows** (`sparse_unet_vae.py:131`)
+
+1. `to_subdiv`: linear → `[5000, 8]` — one logit per sub-voxel child (each voxel has 8 children in a 2× finer grid)
+2. Binarize: which children are "on"? Say avg 4 of 8 → K' ≈ 20000
+3. `SparseUpsample(2)`: multiply coords × 2, add sub-voxel offset for each surviving child
+
+```
+# spatial/basic.py:94-97
+new_coords[:, 1:] *= self.factor       # scale up
+new_coords[...] += subidx_offset       # add child offset (0,0,0) (0,0,1) (0,1,0) ...
+```
+
+Result:
+```
+feats:  [5000, 64]  →  [20000, 64]    # each child copies parent features
+coords: [5000, 4]   →  [20000, 4]    # at 2× finer resolution
+```
+The network decided which voxels to expand, not the caller.
+
+**4. More conv blocks at fine resolution**
+```
+feats:  [20000, 64]  →  [20000, 32]
+coords: [20000, 4]   unchanged
+```
+
+**5. `output_layer` — final linear projection** (`sparse_unet_vae.py:500`)
+```
+feats:  [20000, 32]  →  [20000, 7]
+coords: [20000, 4]   unchanged
+```
+
+**6. Back in `FlexiDualGridVaeDecoder.forward()` — split the 7 channels** (`fdg_vae.py:87-89`)
+```python
+vertices           = sigmoid(feats[..., 0:3])   # [20000, 3]  sub-voxel vertex offsets
+intersected_logits = feats[..., 3:6]            # [20000, 3]  which edges cross surface
+quad_lerp          = softplus(feats[..., 6:7])  # [20000, 1]  blending weight
+```
+
+**7. `flexible_dual_grid_to_mesh(coords, vertices, intersected, quad_lerp, grid_size=resolution)`**
+
+`resolution` is just the denominator that converts integer coords to world-space positions in `[-0.5, 0.5]³`. It does not constrain the network.
+
+### Why different input sizes work
+
+Every operation is either:
+- A **Linear on rows**: `[K, C_in] → [K, C_out]` — K is irrelevant
+- A **sparse conv**: gathers neighbors from the coord table — works for any K
+- A **coord arithmetic step**: multiply/add integers — works for any K
+
+There is no reshape to a fixed grid anywhere. K flows through as the row dimension.
+
+---
+
 ## What we are training (unconditioned SS flow)
 
 Only Stage 1 is trained, with `cond=None`:
