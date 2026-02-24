@@ -14,7 +14,10 @@ __attributes = {
     'SparseUnetVaeEncoder': 'sc_vaes.sparse_unet_vae',
     'SparseUnetVaeDecoder': 'sc_vaes.sparse_unet_vae',
     'FlexiDualGridVaeEncoder': 'sc_vaes.fdg_vae',
-    'FlexiDualGridVaeDecoder': 'sc_vaes.fdg_vae'
+    'FlexiDualGridVaeDecoder': 'sc_vaes.fdg_vae',
+
+    # Reward
+    'Slat2Scalar': 'reward.slat_scalar',
 }
 
 __submodules = []
@@ -76,3 +79,5 @@ if __name__ == '__main__':
         
     from .sc_vaes.sparse_unet_vae import SparseUnetVaeEncoder, SparseUnetVaeDecoder
     from .sc_vaes.fdg_vae import FlexiDualGridVaeEncoder, FlexiDualGridVaeDecoder
+
+    from .reward.slat_scalar import Slat2Scalar
