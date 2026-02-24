@@ -78,9 +78,9 @@ PBR_VOXELS   SparseTensor(feats=[K'', 6])   at fine 1024 grid
      │
      ▼  MeshWithVoxel  (mesh + voxel PBR attributes)
      ▼  o_voxel.postprocess.to_glb()
-     │    - marching-cubes surface from subs
-     │    - PBR attribute baking from voxels to UV texture (4096×4096)
-     │    - decimation to ~1M faces
+     │    - hole filling + decimation (or optional Dual Contouring remesh)
+     │    - UV unwrapping
+     │    - PBR attribute baking from voxel volume to UV texture
 OUTPUT GLB   textured 3D mesh
 ```
 
@@ -114,4 +114,4 @@ Stages 2 and 3 (shape/texture SLat) are not used during training — those remai
 | Coords (sparse) | `[K, 4]` | Active voxel positions, K varies |
 | Shape SLat feats | `[K, 32]` | Per-voxel geometry features |
 | Tex SLat feats | `[K', 6]` | Per-voxel PBR attributes |
-| Final mesh | `[V,3] + [F,3]` | Marching-cubes surface |
+| Final mesh | `[V,3] + [F,3]` | Flexible Dual Grid surface (from Stage 2) |
