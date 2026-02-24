@@ -12,6 +12,7 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel as DDP
 import numpy as np
+from tqdm.auto import tqdm
 
 from torchvision import utils
 from torch.utils.tensorboard import SummaryWriter
@@ -826,6 +827,7 @@ class BasicTrainer:
 
         time_last_print = 0.0
         time_elapsed = 0.0
+        pbar = tqdm(total=self.max_steps, initial=self.step, disable=not self.is_master)
         while self.step < self.max_steps:
             time_start = time.time()
 
@@ -836,6 +838,8 @@ class BasicTrainer:
             time_elapsed += time_end - time_start
 
             self.step += 1
+            pbar.update(1)
+            pbar.set_postfix(loss=step_log.get('loss', float('nan')))
 
             # Print progress
             if self.is_master and self.step % self.i_print == 0:
@@ -884,7 +888,7 @@ class BasicTrainer:
                 # Save checkpoint
                 if self.step % self.i_save == 0:
                     self.save()
-                    
+
             # Check abort
             self.check_abort()
 
@@ -894,7 +898,7 @@ class BasicTrainer:
         if self.is_master:
             self.writer.close()
             print('Training finished.')
-            
+            pbar.close()
     def profile(self, wait=2, warmup=3, active=5):
         """
         Profile the training loop.

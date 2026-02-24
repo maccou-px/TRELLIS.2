@@ -7,7 +7,6 @@ import numpy as np
 from scipy import stats as scipy_stats
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 
 from .basic import BasicTrainer
 from ..datasets.reward import RewardDataset
@@ -103,9 +102,9 @@ class RewardTrainer(BasicTrainer):
         return flat
 
     def _predict(self, ds, desc='eval', one_batch=False):
-        loader = DataLoader(ds, batch_size=self.eval_batch_size, shuffle=False, collate_fn=ds.collate_fn)
+        loader = DataLoader(ds, batch_size=self.eval_batch_size, shuffle=True, collate_fn=ds.collate_fn)
         preds, targets = [], []
-        for i, data in enumerate(tqdm(loader, desc=f'Eval {desc}', disable=not self.is_master)):
+        for data in loader:
             data = recursive_to_device(data, 'cuda')
             preds.append(self.models['model'](**data).cpu())
             targets.append(data['y'].cpu())
@@ -142,7 +141,7 @@ class RewardTrainer(BasicTrainer):
         n_targets = len(self.target_keys)
         n_splits = len(splits)
         
-        fig, axes = plt.subplots(n_targets, n_splits, figsize=(5 * n_splits, 5 * n_targets))
+        fig, axes = plt.subplots(n_targets, n_splits, figsize=(5 * n_splits, 5 * n_targets), sharex='col', sharey='row')
         if n_targets == 1:
             axes = axes.reshape(1, -1)
         if n_splits == 1:
@@ -158,12 +157,13 @@ class RewardTrainer(BasicTrainer):
                 t = targets_denorm[key].numpy()
 
                 mae = np.mean(np.abs(p - t))
-                r2 = np.corrcoef(p, t)[0, 1] ** 2 if len(p) > 1 else 0
+                r2 = np.corrcoef(p, t)[0, 1] ** 2
                 rho = self._compute_spearman(t, p)
 
                 ax.scatter(t, p, alpha=0.5, s=15, marker='x', color='b')
                 lim = [min(t.min(), p.min()), max(t.max(), p.max())]
                 ax.plot(lim, lim, 'r--', alpha=0.7, lw=1.5)
+                ax.grid(True, linestyle='--', alpha=0.3)
 
                 if row_idx == n_targets - 1:
                     ax.set_xlabel('Target', fontsize=10)
@@ -172,7 +172,6 @@ class RewardTrainer(BasicTrainer):
 
                 title = f'{split} — {key}\nMAE: {mae:.4f} | ρ: {rho:.4f} | R²: {r2:.4f}'
                 ax.set_title(title, fontsize=9)
-                ax.set_aspect('equal', adjustable='datalim')
 
         fig.tight_layout()
         fig.savefig(os.path.join(out_dir, 'all_predictions.png'), dpi=150, bbox_inches='tight')
