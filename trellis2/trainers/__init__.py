@@ -20,6 +20,8 @@ __attributes = {
     
     'DinoV2FeatureExtractor': 'flow_matching.mixins.image_conditioned',
     'DinoV3FeatureExtractor': 'flow_matching.mixins.image_conditioned',
+
+    'RewardTrainer': 'reward',
 }
 
 __submodules = []
@@ -66,3 +68,5 @@ if __name__ == '__main__':
         DinoV2FeatureExtractor,
         DinoV3FeatureExtractor,
     )
+
+    from .reward.latent_scalar import LatentToScalarTrainer
