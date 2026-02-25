@@ -11,10 +11,10 @@ set -e
 # data_toolkit resolves the "datasets" plugin package from trellis2/
 cd /home/jovyan/TRELLIS.2/trellis2
 
-DATASET_ROOT="/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes"
-STL_DIR="/flux/vault/Conventional_Airplanes_geoms"
-# DATASET_ROOT="/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes_subset"
-# STL_DIR="/flux/vault/Conventional_Airplanes_geoms_subset"
+# DATASET_ROOT="/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes"
+# STL_DIR="/flux/vault/Conventional_Airplanes_geoms"
+DATASET_ROOT="/flux/vault/99_dev_martin/trellis_diffusion/datasets/planes_subset"
+STL_DIR="/flux/vault/Conventional_Airplanes_geoms_subset"
 
 TRELLIS_TOOLKIT="/home/jovyan/TRELLIS.2/data_toolkit"
 

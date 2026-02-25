@@ -564,7 +564,7 @@ class BasicTrainer:
             if name in finetune_ckpt:
                 ckpt_path = finetune_ckpt[name]
                 ckpt_data = read_file_dist(ckpt_path)
-                if ckpt_path.endswith('.safetensors'):
+                if ckpt_path.endswith(".safetensors"):
                     model_ckpt = safetensors_torch.load(ckpt_data.read())
                     model_ckpt = {k: v.to(self.device) for k, v in model_ckpt.items()}
                 else:
@@ -590,7 +590,9 @@ class BasicTrainer:
                 model_ckpts[name] = model_ckpt
                 missing, unexpected = model.load_state_dict(model_ckpt, strict=False)
                 if self.is_master and missing:
-                    print(f"Warning: keys missing from checkpoint (will use random init): {missing}")
+                    print(
+                        f"Warning: keys missing from checkpoint (will use random init): {missing}"
+                    )
             else:
                 if self.is_master:
                     print(f"Warning: {name} not found in finetune_ckpt, skipped.")
